@@ -1,0 +1,136 @@
+EXECUTE block
+as
+declare variable v_id_structure type of tforeign;
+declare variable v_id_act_off type of tforeign;
+declare variable v_id_act_buy type of tforeign;
+declare variable v_id_parsel type of tforeign;
+declare variable v_quant_int type of tinteger;
+declare variable v_quant_num type of tinteger;
+declare variable v_quant_div type of tinteger;
+declare variable v_price_sell_sum type of tdouble;
+declare variable v_price_sell_sum_new type of tdouble;
+declare variable v_id_vat20 type of tinteger;
+declare variable V_ID_DRUG type of tforeign;
+declare variable V_PRICE_BUY type of tdouble;
+declare variable V_PRICE_FACTORY type of tdouble;
+declare variable v_id_extra type of tforeign;
+begin
+-- Отключаем проверку "Отпускная меньше закупочной"
+-- Важно провести проверку всех документов перед их закрытием.
+rdb$set_context('USER_SESSION', 'IGNORE_BUY', 'YES');
+
+-- Перебираем все структуры на базе (с учетом виртуальных) для виполнения списания-прихода.
+ for select id_structure from sys_structure into :v_id_structure
+ do begin
+   -- Создаем акт списания
+   insert into d_act_off (id_structure) values (:v_id_structure) returning id into :v_id_act_off; 
+   -- Создаем акт прихода
+   insert into d_act_buy (id_structure) values (:v_id_structure) returning id into :v_id_act_buy;
+
+   -- Выбираем все остатки со ставкой 0%
+   -- ВАЖНО!!! Проверяйте все блокировки и резервы что бы не запускать скрипт повторно.
+   for select
+     s.id_parsel,
+     s.quant_int,
+     s.quant_num,
+     s.quant_div,
+     s.price_sell_sum
+   from da_stock s
+   join da_parsel p on s.id_parsel = p.id
+   where s.id_structure = :v_id_structure
+   and s.quant_int+s.quant_num > 0
+   and 
+ p.code=1111
+--s.quant_div = 1000 
+into
+   :v_id_parsel,
+   :v_quant_int,
+   :v_quant_num,
+   :v_quant_div,
+   :v_price_sell_sum
+    do begin
+	
+-- Списываем товар
+insert into d_act_off_item (
+   id_act_off,
+   id_parsel,
+   quant_int,
+   quant_num,
+   quant_div)
+   values
+   (:v_id_act_off,
+    :v_id_parsel,
+    :v_quant_int,
+    :v_quant_num,
+    :v_quant_div);
+-- Получаем информацию для контроля наценки
+  SELECT
+    ID_DRUG,
+    PRICE_BUY,
+    PRICE_FACTORY
+  FROM DA_PARSEL
+  WHERE ID = :V_ID_PARSEL
+  INTO
+    :V_ID_DRUG,
+    :V_PRICE_BUY,
+    :V_PRICE_FACTORY;
+
+-- Этот кусок НЕ навешивает 7% к цене препарата.
+    v_price_sell_sum_new = :v_price_sell_sum;
+	v_quant_int = 1;
+    v_quant_num = 0;
+    v_quant_div = 1;
+
+  select id_extra from c_extra_structure where id_structure = :v_id_structure into :v_id_extra;
+-- Проганяем через контроль наценки что бы при добавлении скрипт не запнулся на сообщении о нарущении.
+  EXECUTE PROCEDURE EXTRA_CONTROL(:v_id_extra, :V_ID_DRUG, 0.2,
+    :V_PRICE_BUY, :V_PRICE_FACTORY, :v_price_sell_sum_new, 1, 0)
+  RETURNING_VALUES(v_price_sell_sum_new);
+  
+-- Делаем приход товара уже с НДС 7%
+  insert into d_act_buy_drug (
+     id_act_buy,
+     quant_int,
+     quant_num,
+     quant_div,
+     id_drug,
+     id_shelf,
+     id_supplier,
+     id_vat,
+     code,
+     barcode,
+     hscode,
+     series,
+     date_expire,
+     cert_name,
+     cert_date,
+     price_factory,
+     price_buy,
+     price_sell_sum
+    )
+    select
+    :v_id_act_buy,
+    :v_quant_int,
+    :v_quant_num,
+    :v_quant_div,
+    p.id_drug,
+    p.id_shelf,
+    p.id_supplier,
+    p.id_vat,
+    p.code,
+    p.barcode,
+    p.hscode,
+    p.series,
+    p.date_expire,
+    p.cert_name,
+    p.cert_date,
+    p.price_factory,
+    p.price_buy,
+    :v_price_sell_sum_new
+    from da_parsel p
+    where p.id = :v_id_parsel;
+   end
+ end
+rdb$set_context('USER_SESSION', 'IGNORE_BUY', NULL);
+end;
+commit;
