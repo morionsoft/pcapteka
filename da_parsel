@@ -1,0 +1,1 @@
+update da_parsel set DATE_EXPIRE='15.12.2025'  where code=5695;
