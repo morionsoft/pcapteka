@@ -1,0 +1,14 @@
+select
+ p.code,
+ md.name_ext,
+ dms.QUANT_FLOAT,
+ dms.quant_int,
+ dms.quant_num,
+ dms.quant_div
+from  da_move_stock  dms
+--join da_move dm on dm.id=dms.id_move
+join m_drug md on md.id=dms.id_drug
+join da_parsel p on p.id=dms.id_parsel
+where
+dms.ID_STRUCTURE = (select id_structure from sys_var)
+and '30.11.2017 00:00:00' between dms.stock_start and dms.stock_close;
