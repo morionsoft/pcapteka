@@ -1,0 +1,1 @@
+select 'update or insert INTO C_DOCTOR (id, name, user_note) values (' || ID ||',''' || NAME||''','''||user_note||''');' from C_DOCTOR
