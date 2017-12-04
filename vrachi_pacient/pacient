@@ -1,0 +1,1 @@
+select 'update or insert INTO C_PATIENT (id, name, address, document, ID_HOSPITAL_DIAGS) values ('||id||','''||name||''','''|| address||''','''||document||''','||ID_HOSPITAL_DIAGS||');' from C_PATIENT
