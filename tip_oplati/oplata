@@ -1,0 +1,4 @@
+update d_receipt
+set id_receipt_type = (select id from d_receipt_type where name = 'Платежная карточка') -- Указываем необходимый тип оплаты
+where (id = (select id from da_move where name ='ЧК-0105764') and ID_STRUCTURE = (SELECT ID_STRUCTURE FROM TMP_DOC_PARAMS)); -- Указываем чек
+commit;
