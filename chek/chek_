@@ -1,0 +1,38 @@
+--встановити признак друку на закритому чеку
+update da_move set is_closed='0' where (id =(select id from da_move where name='ЧК-0000010' and id_structure = (select id_structure from sys_var) ) );
+update d_receipt set is_printed='1' where (id =(select id from da_move where name='ЧК-0000010' and id_structure = (select id_structure from sys_var) ) );
+update da_move set is_closed='1' where (id =(select id from da_move where name='ЧК-0000010' and id_structure = (select id_structure from sys_var) ) );
+commit;
+
+--відкрити чек
+update da_move set is_closed='0' where (id =(select id from da_move where name='ЧК-0000010' and id_structure = (select id_structure from sys_var) ) );
+
+--змінити користувача (виконати під тим користувачем, на якого змінюємо признак)
+update da_move set is_closed='0' where (id =(select id from da_move where name='ЧК-0158382' and id_structure = (select id_structure from sys_var) ) );
+update d_receipt set user_name='sysdba' where (id =(select id from da_move where name='ЧК-0158382' and id_structure = (select id_structure from sys_var) ) );
+update da_move set is_closed='1' where (id =(select id from da_move where name='ЧК-0000010' and id_structure = (select id_structure from sys_var) ) );
+commit;
+
+--Змінити тип оплати (0-Наличка, 1-Платежка)
+update da_move set is_closed='0' where (id =(select id from da_move where name='ЧК-0000010' and id_structure = (select id_structure from sys_var) ) );
+update d_receipt set id_receipt_type='1' where (id =(select id from da_move where name='ЧК-0000013' and id_structure = (select id_structure from sys_var) ) );
+update da_move set is_closed='1' where (id =(select id from da_move where name='ЧК-0000010' and id_structure = (select id_structure from sys_var) ) );
+commit;
+
+
+25.44.85.155
+update da_move set is_closed='0' where (id =(select id from da_move where name='ЧК-0000010' and id_structure = (select id_structure from sys_var) ) );
+update d_receipt set id_receipt_type='1' where (id =(select id from da_move where name='ЧК-0000013' and id_structure = (select id_structure from sys_var) ) );
+update d_receipt set is_printed='1' where (id =(select id from da_move where name='ЧК-0000010' and id_structure = (select id_structure from sys_var) ) );
+update da_move set is_closed='1' where (id =(select id from da_move where name='ЧК-0000010' and id_structure = (select id_structure from sys_var) ) );
+commit;
+
+---
+update da_move_stock set id=id where id <>0 and STOCK_CLOSE>current_date-15 and id_structure=(select id_structure from sys_var);
+commit;
+
+select is_active from hdf_table where id in (15, 16, 17, 18)
+
+update hdf_table set is_active =0 where id in (15, 16, 17, 18)
+
+update hdf_table set is_active =1 where id in (15, 16, 17, 18)
