@@ -9,8 +9,9 @@ update da_move set is_closed='0' where (id =(select id from da_move where name='
 
 --змінити користувача (виконати під тим користувачем, на якого змінюємо признак)
 update da_move set is_closed='0' where (id =(select id from da_move where name='ЧК-0158382' and id_structure = (select id_structure from sys_var) ) );
-update d_receipt set user_name='sysdba' where (id =(select id from da_move where name='ЧК-0158382' and id_structure = (select id_structure from sys_var) ) );
-update da_move set is_closed='1' where (id =(select id from da_move where name='ЧК-0000010' and id_structure = (select id_structure from sys_var) ) );
+update d_receipt set user_name='P2' where (id =(select id from da_move where name='ЧК-0158382' and id_structure = (select id_structure from sys_var) ) );
+update da_move set is_closed='1' where (id =(select id from da_move where name='ЧК-0158382' and id_structure = (select id_structure from sys_var) ) );
+update d_receipt set id_user=(select id from sys_auth_user where fb_name='P2')  where id =(select id from da_move where name='ЧК-0158382' and id_structure = (select id_structure from sys_var) );
 commit;
 
 --Змінити тип оплати (0-Наличка, 1-Платежка)
