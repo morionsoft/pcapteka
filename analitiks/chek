@@ -1,0 +1,6 @@
+select m.name
+ from d_receipt r
+ join da_move m on m.id = r.id
+ join sys_auth_user a on r.id_user = a.id
+ where m.date_time between '01.12.2017' and  '15.12.2017'
+ and a.fb_name ='P3'
